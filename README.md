@@ -26,8 +26,20 @@ In this example, each region is checked for 2 config rules (restricted-ssh and r
 
 # Usage
 
+By default, the tool runs in dry run mode and will NOT to deletes.  To run the tool in dry run mode use:
+
 ```bash
 docker run -e "AWS_CLI_PROFILE=dev" \
+           -v ~/.aws/credentials:/root/.aws/credentials:ro \
+           -v /my/data-dir/config.cfg:/src/config.cfg:ro \
+           signiant/aws-config-rule-port-reaper
+```
+
+To enable deletes from security groups, set the variable REAPER_DO_DELETE:
+
+```bash
+docker run -e "AWS_CLI_PROFILE=dev" \
+           -e "REAPER_DO_DELETE=true" \
            -v ~/.aws/credentials:/root/.aws/credentials:ro \
            -v /my/data-dir/config.cfg:/src/config.cfg:ro \
            signiant/aws-config-rule-port-reaper

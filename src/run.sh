@@ -22,6 +22,10 @@
 # THE SOFTWARE.
 #
 
+#EXTERNAL ENVIRONMENT VARIABLES
+# AWS_CLI_PROFILE
+# REAPER_DO_DELETE
+
 #ENVIRONMENT VARIABLES
 
 # @info:        Overall script return code.
@@ -107,9 +111,18 @@ removeSGEntry()
   local PORT=$3
   local CLI_PROFILE=$4
   local STATUS=0
+  local DRY_RUN_FLAG='--dry-run' # Default to dry run mode
+
+  # Should we enable dry run mode or not
+  if [ -z "$REAPER_DO_DELETE" ]; then
+    DRY_RUN_FLAG='--dry-run' # Default to dry run mode
+  else
+    DRY_RUN_FLAG='--no-dry-run'
+  fi
 
   aws ec2 \
      revoke-security-group-ingress \
+     ${DRY_RUN_FLAG} \
      --group-id ${SG_ID} \
      --protocol tcp \
      --port ${PORT} \
@@ -154,6 +167,10 @@ getNonCompliantSGs()
 if [ -z "$AWS_CLI_PROFILE" ]; then
   echo "ERROR: No AWS CLI profile specified in the enviroment (AWS_CLI_PROFILE)"
   RETCODE=1
+fi
+
+if [ -z "$REAPER_DO_DELETE" ]; then
+  echo "*** Running in Dry-run mode.  To enable deletes, set the environment variable REAPER_DO_DELETE"
 fi
 
 if [ $RETCODE == 0 ]; then

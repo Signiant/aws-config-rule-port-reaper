@@ -35,7 +35,7 @@ docker run -e "AWS_CLI_PROFILE=dev" \
            signiant/aws-config-rule-port-reaper
 ```
 
-To enable deletes from security groups, set the variable REAPER_DO_DELETE:
+To enable deletes from security groups, set the variable REAPER_DO_DELETE to any value:
 
 ```bash
 docker run -e "AWS_CLI_PROFILE=dev" \

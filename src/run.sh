@@ -52,57 +52,6 @@ declare NON_COMPLIANT_SGS
 # FUNCTIONS
 
 # @info:  Remove an open rule from a security group for the given port
-bash-4.3# cat run.sh
-#!/usr/local/bin/bash
-
-# The MIT License (MIT)
-# Copyright © 2016 ZZROT LLC <docker@zzrot.com>
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the “Software”), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-#
-
-#ENVIRONMENT VARIABLES
-
-# @info:	Overall script return code.
-declare RETCODE=0
-
-# @info:	File containing the mapping of regions to config rules.
-declare REGION_MAP_FILE=regions.cfg
-
-# @info: A single region from the regions map file
-declare REGION
-
-# @info: A single config rule from the regions map file
-declare CFG_RULE
-
-# @info: A single port from the regions map file
-declare PORT
-
-# @info: Whether a config rule is compliant or non-compliant
-declare COMPLIANCE_STATUS
-
-# @info: List of security groups that are not compliant with the config rule
-declare NON_COMPLIANT_SGS
-
-# FUNCTIONS
-
-# @info:  Remove an open rule from a security group for the given port
 # @args:	AWS region, security group ID, port, aws cli profile name
 removeSGEntry()
 {

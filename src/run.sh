@@ -122,6 +122,8 @@ if [ -z "$REAPER_DO_DELETE" ]; then
   echo "*** Running in Dry-run mode.  To enable deletes, set the environment variable REAPER_DO_DELETE"
 fi
 
+echo "Checking config rule compliance using AWS CLI profile ${AWS_CLI_PROFILE}"
+
 if [ $RETCODE == 0 ]; then
   while read -r line; do
 

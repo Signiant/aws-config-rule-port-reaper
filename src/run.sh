@@ -62,7 +62,7 @@ removeSGRuleinRange()
   local PROTOCOL=$4
 
   if [[ $FROM -le $TEST_PORT ]] && [[ $TO -ge $TEST_PORT ]]; then
-    #delete rule as in range of SSH
+    #delete rule as in range
     aws ec2 \
       revoke-security-group-ingress \
       ${DRY_RUN_FLAG} \

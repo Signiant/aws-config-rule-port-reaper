@@ -53,6 +53,37 @@ declare NON_COMPLIANT_SGS
 
 # @info:  Remove an open rule from a security group for the given port
 # @args:	AWS region, security group ID, port, aws cli profile name
+
+removeSGRuleinRange()
+{
+  local FROM=$1
+  local TO=$2
+  local TEST_PORT=$3
+  local PROTOCOL=$4
+
+  if [[ $FROM -le $TEST_PORT ]] && [[ $TO -ge $TEST_PORT ]]; then
+    #delete rule as in range of SSH
+    aws ec2 \
+      revoke-security-group-ingress \
+      ${DRY_RUN_FLAG} \
+      --group-id ${SG_ID} \
+      --protocol ${PROTOCOL} \
+      --port ${FROM}-${TO} \
+      --cidr '0.0.0.0/0' \
+      --region ${REGION} \
+      --profile ${CLI_PROFILE}
+    STATUS=$?
+    if [ ${STATUS} == 0 ]; then
+      echo "Successfully removed rule in ${PROTOCOL} port range ${FROM}-${TO} from security group ${SG_ID} for port ${PORT}"
+    else
+      echo "*** ERROR: Rule in ${PROTOCOL} range ${FROM}-${TO} but unable to remove from security group ${SG_ID} for port ${PORT}"
+    fi
+  else
+    echo "*** ERROR: Unable to remove rule from security group ${SG_ID} for port ${PORT}"
+  fi
+}
+
+
 removeSGEntry()
 {
   local REGION=$1
@@ -83,7 +114,21 @@ removeSGEntry()
   if [ ${STATUS} == 0 ]; then
     echo "Successfully removed rule from security group ${SG_ID} for port ${PORT}"
   else
-    echo "*** ERROR: Unable to remove rule from security group ${SG_ID} for port ${PORT}"
+    #Check to see if in range of rule instead of single port
+    #get ports and protocols
+    readarray -t FROM_PORTS < <(aws ec2 describe-security-groups --region ${REGION} --filters Name=ip-permission.cidr,Values='0.0.0.0/0' --group-ids ${SG_ID} --query 'SecurityGroups[*].IpPermissions[*].{FromPort:FromPort}' | grep "FromPort" | awk '{ print $2 }')
+    readarray -t TO_PORTS < <(aws ec2 describe-security-groups --region ${REGION} --filter Name=ip-permission.cidr,Values='0.0.0.0/0' --group-ids ${SG_ID} --query 'SecurityGroups[*].IpPermissions[*].{ToPort:ToPort}' | grep "ToPort" | awk '{ print $2 }')
+    readarray -t PROTOCOLS < <(aws ec2 describe-security-groups --region ${REGION} --filter Name=ip-permission.cidr,Values='0.0.0.0/0' --group-ids ${SG_ID} --query 'SecurityGroups[*].IpPermissions[*].{IpProtocol:IpProtocol}' | grep "IpProtocol" | awk '{ print $2 }')
+    declare -i x=0
+    Loop through and check for range
+    for FROM_PORT in "${FROM_PORTS[@]}"
+    do
+      #remove quotes from protocols
+      PROTOCOL="${PROTOCOLS[x]%\"}"
+      PROTOCOL="${PROTOCOL#\"}"
+      removeSGRuleinRange ${FROM_PORT} ${TO_PORTS[x]} ${PORT} ${PROTOCOL}
+      x=$((x+1))
+    done
   fi
 }
 
@@ -145,21 +190,18 @@ if [ $RETCODE == 0 ]; then
                         --query 'ComplianceByConfigRules[0].Compliance.ComplianceType' \
                         --output text)
 
-    #echo "Config compliance status for ${cfg-rule} is ${compliance_status}"
-
     if [ "${COMPLIANCE_STATUS}" == "COMPLIANT" ]; then
       echo "Rule ${CFG_RULE} is compliant"
     elif [ -z "${COMPLIANCE_STATUS}" ]; then
       echo "*** ERROR: Unable to determine compliance status for ${CFG_RULE}"
     else
-      echo "Rule ${CFG_RULE} is NOT compliant"
       # find the SGs not compliant
       getNonCompliantSGs ${REGION} ${CFG_RULE} ${AWS_CLI_PROFILE} ${PORT}
 
       # For each SG, remove the 0.0.0.0 rule for the specified port
       for SG in ${NON_COMPLIANT_SGS}
       do
-        echo "SG $SG"
+        echo "Rule ${CFG_RULE} is NOT compliant in ${AWS_CLI_PROFILE} ${REGION}: SG $SG"
         removeSGEntry ${REGION} ${SG} ${PORT} ${AWS_CLI_PROFILE}
       done
     fi

@@ -180,7 +180,7 @@ if [ $RETCODE == 0 ]; then
     PORT=${REGIONS[port]}
     PROTOCOL=${REGIONS[protocol]}
 
-    echo "Checking aws config for region ${REGION} (rule ${CFG_RULE} port ${PORT} protocol ${PROTOCOL}"
+    echo "Checking aws config for region ${REGION} rule ${CFG_RULE} port ${PORT} protocol ${PROTOCOL}"
 
     # Find out if we are compliant or not in 'this' region
     COMPLIANCE_STATUS=$(aws configservice \

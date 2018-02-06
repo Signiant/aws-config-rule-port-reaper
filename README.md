@@ -15,12 +15,12 @@ Find security groups that allow SSH or RDP (or your favourite port) access from 
 The app is driven by a small configuration file that can be mounted into the docker container using a bind mount.  An example file looks like:
 
 ```BASH
-( [region]=us-east-1 [cfg-rule]=restricted-ssh 22 )
-( [region]=us-west-2 [cfg-rule]=restricted-ssh 22  )
-( [region]=eu-west-1 [cfg-rule]=restricted-ssh 22  )
-( [region]=us-east-1 [cfg-rule]=restricted-rdp 3389 )
-( [region]=us-west-2 [cfg-rule]=restricted-rdp 3389 )
-( [region]=eu-west-1 [cfg-rule]=restricted-rdp 3389 )
+( [region]=us-east-1 [cfg-rule]=restricted-ssh [port]=22 [protocol]=tcp )
+( [region]=us-west-2 [cfg-rule]=restricted-ssh [port]=22 [protocol]=tcp  )
+( [region]=eu-west-1 [cfg-rule]=restricted-ssh [port]=22 [protocol]=tcp  )
+( [region]=us-east-1 [cfg-rule]=restricted-rdp [port]=3389 [protocol]=tcp )
+( [region]=us-west-2 [cfg-rule]=restricted-rdp [port]=3389 [protocol]=tcp )
+( [region]=eu-west-1 [cfg-rule]=restricted-rdp [port]=3389 [protocol]=tcp )
 ```
 In this example, each region is checked for 2 config rules (restricted-ssh and restricted-rdp) which in turn check for wide open ports 22 and 3389
 

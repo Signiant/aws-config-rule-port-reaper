@@ -90,6 +90,7 @@ removeSGEntry()
   local SG_ID=$2
   local PORT=$3
   local CLI_PROFILE=$4
+  local PROTOCOL=$5
   local STATUS=0
   local DRY_RUN_FLAG='--dry-run' # Default to dry run mode
 
@@ -99,12 +100,11 @@ removeSGEntry()
   else
     DRY_RUN_FLAG='--no-dry-run'
   fi
-
   aws ec2 \
      revoke-security-group-ingress \
      ${DRY_RUN_FLAG} \
      --group-id ${SG_ID} \
-     --protocol tcp \
+     --protocol ${PROTOCOL} \
      --port ${PORT} \
      --cidr '0.0.0.0/0' \
      --region ${REGION} \
@@ -116,17 +116,17 @@ removeSGEntry()
   else
     #Check to see if in range of rule instead of single port
     #get ports and protocols
-    readarray -t FROM_PORTS < <(aws ec2 describe-security-groups --region ${REGION} --filters Name=ip-permission.cidr,Values='0.0.0.0/0' --group-ids ${SG_ID} --query 'SecurityGroups[*].IpPermissions[*].{FromPort:FromPort}' | grep "FromPort" | awk '{ print $2 }')
-    readarray -t TO_PORTS < <(aws ec2 describe-security-groups --region ${REGION} --filter Name=ip-permission.cidr,Values='0.0.0.0/0' --group-ids ${SG_ID} --query 'SecurityGroups[*].IpPermissions[*].{ToPort:ToPort}' | grep "ToPort" | awk '{ print $2 }')
-    readarray -t PROTOCOLS < <(aws ec2 describe-security-groups --region ${REGION} --filter Name=ip-permission.cidr,Values='0.0.0.0/0' --group-ids ${SG_ID} --query 'SecurityGroups[*].IpPermissions[*].{IpProtocol:IpProtocol}' | grep "IpProtocol" | awk '{ print $2 }')
+    readarray -t FROM_PORTS < <(aws ec2 describe-security-groups --profile ${CLI_PROFILE} --region ${REGION} --filters Name=ip-permission.cidr,Values='0.0.0.0/0' --group-ids ${SG_ID} --query 'SecurityGroups[*].IpPermissions[*].{FromPort:FromPort}' | grep "FromPort" | awk '{ print $2 }')
+    readarray -t TO_PORTS < <(aws ec2 describe-security-groups --profile ${CLI_PROFILE} --region ${REGION} --filter Name=ip-permission.cidr,Values='0.0.0.0/0' --group-ids ${SG_ID} --query 'SecurityGroups[*].IpPermissions[*].{ToPort:ToPort}' | grep "ToPort" | awk '{ print $2 }')
+    readarray -t PROTOCOLS < <(aws ec2 describe-security-groups --profile ${CLI_PROFILE} --region ${REGION} --filter Name=ip-permission.cidr,Values='0.0.0.0/0' --group-ids ${SG_ID} --query 'SecurityGroups[*].IpPermissions[*].{IpProtocol:IpProtocol}' | grep "IpProtocol" | awk '{ print $2 }')
     declare -i x=0
-    Loop through and check for range
+    #Loop through and check for range
     for FROM_PORT in "${FROM_PORTS[@]}"
     do
       #remove quotes from protocols
-      PROTOCOL="${PROTOCOLS[x]%\"}"
-      PROTOCOL="${PROTOCOL#\"}"
-      removeSGRuleinRange ${FROM_PORT} ${TO_PORTS[x]} ${PORT} ${PROTOCOL}
+      TEST_PROTOCOL="${PROTOCOLS[x]%\"}"
+      TEST_PROTOCOL="${PROTOCOL#\"}"
+      removeSGRuleinRange ${FROM_PORT} ${TO_PORTS[x]} ${PORT} ${TEST_PROTOCOL}
       x=$((x+1))
     done
   fi
@@ -178,8 +178,9 @@ if [ $RETCODE == 0 ]; then
     REGION=${REGIONS[region]}
     CFG_RULE=${REGIONS[cfg-rule]}
     PORT=${REGIONS[port]}
+    PROTOCOL=${REGIONS[protocol]}
 
-    echo "Checking aws config for region ${REGION} (rule ${CFG_RULE} port ${PORT})"
+    echo "Checking aws config for region ${REGION} (rule ${CFG_RULE} port ${PORT} protocol ${PROTOCOL}"
 
     # Find out if we are compliant or not in 'this' region
     COMPLIANCE_STATUS=$(aws configservice \
@@ -202,7 +203,7 @@ if [ $RETCODE == 0 ]; then
       for SG in ${NON_COMPLIANT_SGS}
       do
         echo "Rule ${CFG_RULE} is NOT compliant in ${AWS_CLI_PROFILE} ${REGION}: SG $SG"
-        removeSGEntry ${REGION} ${SG} ${PORT} ${AWS_CLI_PROFILE}
+        removeSGEntry ${REGION} ${SG} ${PORT} ${AWS_CLI_PROFILE} ${PROTOCOL}
       done
     fi
   done < ${REGION_MAP_FILE}
